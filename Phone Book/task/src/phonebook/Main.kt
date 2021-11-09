@@ -43,10 +43,12 @@ fun main() {
     val timeFormatted = timeFormat(time)
     println("Found $foundNum / ${finds.size} entries. Time taken: $timeFormatted")
 
+
+
     println()
     println("Start searching (bubble sort + jump search)...")
     val (sorted, sortingTime) = measureTime {
-        data.map { it.splitAt(' ')[1] }.bubbleSort()
+        data.map { it.splitAt(' ')[1] }.sorted()
     }
 
     val (foundJump, jumpTime) = measureTime {
@@ -58,6 +60,42 @@ fun main() {
     println("Found $foundJump / ${finds.size} entries. Time taken: $total")
     println("Sorting time: ${timeFormat(sortingTime)}")
     println("Searching time: ${timeFormat(jumpTime)}")
+
+
+
+    println()
+    println("Start searching (quick sort + binary search)...")
+    val (sortedQ, sortingTimeQ) = measureTime {
+        data.map { it.splitAt(' ')[1] }.quickSort()
+    }
+
+    val (foundBS, bSTime) = measureTime {
+        finds.map { find ->
+            sorted.binSearch(find) >= 0
+        }.count { it }
+    }
+    val totalQBS = timeFormat(sortingTimeQ + bSTime)
+    println("Found $foundBS / ${finds.size} entries. Time taken: $totalQBS")
+    println("Sorting time: ${timeFormat(sortingTimeQ)}")
+    println("Searching time: ${timeFormat(bSTime)}")
+
+
+
+    println()
+    println("Start searching (hash table)...")
+    val (sortedH, sortingTimeH) = measureTime {
+        data.map { it.splitAt(' ')[1] }.toHashSet()
+    }
+
+    val (foundH, hTime) = measureTime {
+        finds.map { find ->
+            sortedH.contains(find)
+        }.count { it }
+    }
+    val totalH = timeFormat(sortingTimeH + hTime)
+    println("Found $foundH / ${finds.size} entries. Time taken: $totalH")
+    println("Creating time: ${timeFormat(sortingTimeH)}")
+    println("Searching time: ${timeFormat(hTime)}")
 }
 
 inline fun <reified T : Comparable<T>> List<T>.bubbleSort(
@@ -90,4 +128,34 @@ inline fun <reified T : Comparable<T>> List<T>.jumpSearch(
         currIdx -= 1
 
     return get(currIdx)
+}
+
+fun <T : Comparable<T>> List<T>.quickSort(
+    cmp: (T, T) -> Boolean = { a, b -> a < b }
+): List<T> {
+    if (size <= 1) return this
+    val rnd = random()
+    val (left, right) = partition { cmp(it, rnd) }
+    return left.quickSort(cmp) + right.quickSort(cmp)
+}
+
+fun <T : Comparable<T>> List<T>.binSearch(
+    element: T,
+    cmp: (T, T) -> Boolean = { a, b -> a < b }
+): Int {
+    var low = 0
+    var high = size - 1
+
+    while (low <= high) {
+        val mid = (low + high).ushr(1) // safe from overflows
+        val midVal = get(mid)
+
+        if (cmp(midVal, element))
+            low = mid + 1
+        else if (cmp(element, midVal))
+            high = mid - 1
+        else
+            return mid
+    }
+    return -(low + 1)
 }
